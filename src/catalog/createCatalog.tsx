@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { CREATE_CATALOG, GET_CATALOGS } from './catalogQueries';
 import './createCatalogStyle.css';
+import swal from 'sweetalert';
 
 interface CreateCatalogDto {
   name: string;
@@ -21,18 +22,10 @@ const CreateCatalogForm: React.FC = () => {
     image: ''
   });
 
-  const [createCatalog, { loading, error }] = useMutation(CREATE_CATALOG, {
+  const [createCatalog, { loading }] = useMutation(CREATE_CATALOG, {
     refetchQueries: [{ query: GET_CATALOGS }],
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createCatalog({
-        variables: {
-          createCatalogDto: formData // Use the updated argument name here
-        }
-      });
+    onCompleted: () => {
+      swal("¡Éxito!", "Producto creado correctamente.", "success");
       setFormData({
         name: '',
         description: '',
@@ -40,9 +33,19 @@ const CreateCatalogForm: React.FC = () => {
         price: 0,
         image: ''
       });
-    } catch (err) {
-      console.error('Error creating catalog:', err);
+    },
+    onError: (error) => {
+      console.error('Error creating catalog:', error);
     }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createCatalog({
+      variables: {
+        createCatalogDto: formData
+      }
+    });
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'stock' | 'price') => {
@@ -127,12 +130,6 @@ const CreateCatalogForm: React.FC = () => {
           {loading ? 'Creando...' : 'Crear Producto'}
         </button>
       </form>
-      
-      {error && (
-        <div className="catalog-error-message">
-          Error al crear producto: {error.message}
-        </div>
-      )}
     </div>
   );
 };
